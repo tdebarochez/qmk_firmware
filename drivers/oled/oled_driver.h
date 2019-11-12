@@ -225,6 +225,7 @@ void oled_write(const char *data, bool invert);
 // Advances the cursor to the next page, wiring ' ' to the remainder of the current page
 void oled_write_ln(const char *data, bool invert);
 
+<<<<<<< HEAD
 // Pans the buffer to the right (or left by passing true) by moving contents of the buffer
 // Useful for moving the screen in preparation for new drawing
 void oled_pan(bool left);
@@ -234,6 +235,9 @@ void oled_pan(bool left);
 oled_buffer_reader_t oled_read_raw(uint16_t start_index);
 
 // Writes a string to the buffer at current cursor position
+=======
+// Writes data directly to the buffer from the top left corner
+>>>>>>> 1f82bf9cb7 (Improves oled doc, fixes bug in pong start code)
 void oled_write_raw(const char *data, uint16_t size);
 
 // Writes a single byte into the buffer at the specified index
@@ -255,7 +259,11 @@ void oled_write_P(const char *data, bool invert);
 // Remapped to call 'void oled_write_ln(const char *data, bool invert);' on ARM
 void oled_write_ln_P(const char *data, bool invert);
 
+<<<<<<< HEAD
 // Writes a PROGMEM string to the buffer at current cursor position
+=======
+// Writes PROGMEM data directly to the buffer from the top left corner
+>>>>>>> 1f82bf9cb7 (Improves oled doc, fixes bug in pong start code)
 void oled_write_raw_P(const char *data, uint16_t size);
 #else
 #    define oled_write_P(data, invert) oled_write(data, invert)
@@ -319,12 +327,13 @@ uint8_t oled_max_chars(void);
 // Returns the maximum number of lines that will fit on the oled
 uint8_t oled_max_lines(void);
 
- // writes the 8 pixels in data as a vertical line at the given horizontal pixel and vertical line (each line is 8 pixels high)
-void oled_write_byte(uint8_t col, uint8_t line, uint8_t data);
+// Writes the 8 pixels in data as a vertical line at the given horizontal pixel and vertical line (each line is 8 pixels high)
+void oled_write_byte(uint8_t p_col, uint8_t line, uint8_t data);
 
- //
+// define a function that conforms to this signature to be passed to oled_byte_apply_func
+// data is a pointer to the current value of the pixels at the coordinates passed to oled_byte_apply_func
 typedef void (*render_func)(uint8_t *data, void *user_args);
 
- // calls the passed function with the current data byte at the specified position along with the user supplied args
- // This allows for more complex rendering operations, such as transparency.
-void oled_byte_apply_func(uint8_t col, uint8_t line, render_func f, void *user_args);
+// calls the passed function with the current data byte at the specified position along with the user supplied args
+// This allows for more complex rendering operations, such as transparency.
+void oled_byte_apply_func(uint8_t p_col, uint8_t line, render_func f, void *user_args);
