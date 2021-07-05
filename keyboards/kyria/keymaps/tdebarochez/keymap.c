@@ -160,7 +160,7 @@ static void render_qmk_logo(void) {
 static void render_status(void) {
     // QMK Logo and version information
     render_qmk_logo();
-    oled_write_P(PSTR("Kyria rev1.0\n\n"), false);
+    oled_write_P(PSTR("Kyria r1 tdebarochez\n\n"), false);
 
     // Host Keyboard Layer Status
     oled_write_P(PSTR("Layer: "), false);
@@ -202,9 +202,9 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     if (index == 0) {
         // Volume control
         if (clockwise) {
-            tap_code(KC_VOLU);
-        } else {
             tap_code(KC_VOLD);
+        } else {
+            tap_code(KC_VOLU);
         }
     }
     else if (index == 1) {
