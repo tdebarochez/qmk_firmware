@@ -571,7 +571,7 @@ void right_encoder_acw(void) {
     }
 }
 
-void encoder_update_user(uint8_t index, bool clockwise) {
+bool encoder_update_user(uint8_t index, bool clockwise) {
     if (index == 0) {
         if (clockwise) {
             left_encoder_cw();
@@ -586,6 +586,7 @@ void encoder_update_user(uint8_t index, bool clockwise) {
             right_encoder_acw();
         }
     }
+    return true;
 }
 #endif
 

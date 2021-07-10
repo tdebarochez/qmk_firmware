@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include QMK_KEYBOARD_H
+#include "pong.h"
 
 enum layers {
     _QWERTY = 0,
@@ -22,6 +23,33 @@ enum layers {
     _ADJUST
 };
 
+enum custom_keycodes {
+    LOWER = SAFE_RANGE,
+    RAISE,
+    BRKTS,
+    LENC,
+    RENC,
+};
+
+// #define SCROLL 0
+// #define MOUSE 1
+// #define TEXT 2
+// #define APPSW 3
+// #define MEDIA 4
+// #define PONG 5
+
+enum encoder_modes {
+    SCROLL,
+    MOUSE,
+    TEXT,
+    APPSW,
+    MEDIA,
+    PONG
+};
+
+bool status_changed = true;
+uint8_t enc_mode = SCROLL;
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /*
  * Base Layer: QWERTY
@@ -29,19 +57,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * ,-------------------------------------------.                              ,-------------------------------------------.
  * |RAIS/ESC|   Q  |   W  |   E  |   R  |   T  |                              |   Y  |   U  |   I  |   O  |   P  |  | \   |
  * |--------+------+------+------+------+------|                              |------+------+------+------+------+--------|
- * |Ctrl/BS |   A  |   S  |  D   |   F  |   G  |                              |   H  |   J  |   K  |   L  | ;  : |  ' "   |
+ * | LShift |   A  |   S  |  D   |   F  |   G  |                              |   H  |   J  |   K  |   L  | ;  : |  ' "   |
  * |--------+------+------+------+------+------+-------------.  ,-------------+------+------+------+------+------+--------|
- * | LShift |   Z  |   X  |   C  |   V  |   B  |LShift|LShift|  |LShift|LShift|   N  |   M  | ,  < | . >  | /  ? |  - _   |
+ * |Ctrl/BS |   Z  |   X  |   C  |   V  |   B  |LShift|LShift|  |LShift|LShift|   N  |   M  | ,  < | . >  | /  ? |  - _   |
  * `----------------------+------+------+------+------+------|  |------+------+------+------+------+----------------------'
- *                        | GUI  | Del  | Enter| Space| Esc  |  | Enter| Space| Tab  | Bksp | AltGr|
- *                        |      |      | Alt  | Lower| Raise|  | Lower| Raise|      |      |      |
+ *                        | GUI  | GUI  | Del  | Space| Enter|  | Enter| Space| Tab  | Bksp | AltGr|
+ *                        |      |      |      | Lower| Alt  |  | Lower| Raise|      |      |      |
  *                        `----------------------------------'  `----------------------------------'
  */
     [_QWERTY] = LAYOUT(
       LT(_RAISE, KC_ESC),       KC_Q,   KC_W,   KC_E,   KC_R,   KC_T,                                         KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_PIPE,
-      MT(MOD_LCTL, KC_BSPC),   KC_A,   KC_S,   KC_D,   KC_F,   KC_G,                                         KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
-      KC_LSFT,                 KC_Z,   KC_X,   KC_C,   KC_V,   KC_B,   KC_LSFT,   KC_LSFT, KC_LSFT, KC_LSFT, KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_MINS,
-              KC_LGUI, KC_DEL, MT(MOD_LALT, KC_ENT), LT(_LOWER, KC_SPC), LT(_RAISE, KC_ESC), LT(_LOWER, KC_ENT), LT(_RAISE, KC_SPC), KC_TAB,  KC_BSPC, KC_RALT
+      KC_LSFT,   KC_A,   KC_S,   KC_D,   KC_F,   KC_G,                                         KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
+      MT(MOD_LCTL, KC_BSPC),                 KC_Z,   KC_X,   KC_C,   KC_V,   KC_B,   KC_LSFT,   KC_LSFT, KC_LSFT, KC_LSFT, KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_MINS,
+              KC_LGUI, KC_LGUI, KC_DEL, LT(_LOWER, KC_SPC), MT(MOD_LALT, KC_ENT), LT(_LOWER, KC_ENT), LT(_RAISE, KC_SPC), KC_TAB,  KC_BSPC, KC_RALT
     ),
 /*
  * Lower Layer: Symbols
@@ -134,19 +162,19 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 	return OLED_ROTATION_180;
 }
 
-static void render_kyria_logo(void) {
-    static const char PROGMEM kyria_logo[] = {
-        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,128,128,192,224,240,112,120, 56, 60, 28, 30, 14, 14, 14,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7, 14, 14, 14, 30, 28, 60, 56,120,112,240,224,192,128,128,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,  0,  0,  0,192,224,240,124, 62, 31, 15,  7,  3,  1,128,192,224,240,120, 56, 60, 28, 30, 14, 14,  7,  7,135,231,127, 31,255,255, 31,127,231,135,  7,  7, 14, 14, 30, 28, 60, 56,120,240,224,192,128,  1,  3,  7, 15, 31, 62,124,240,224,192,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,240,252,255, 31,  7,  1,  0,  0,192,240,252,254,255,247,243,177,176, 48, 48, 48, 48, 48, 48, 48,120,254,135,  1,  0,  0,255,255,  0,  0,  1,135,254,120, 48, 48, 48, 48, 48, 48, 48,176,177,243,247,255,254,252,240,192,  0,  0,  1,  7, 31,255,252,240,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,255,255,255,  0,  0,  0,  0,  0,254,255,255,  1,  1,  7, 30,120,225,129,131,131,134,134,140,140,152,152,177,183,254,248,224,255,255,224,248,254,183,177,152,152,140,140,134,134,131,131,129,225,120, 30,  7,  1,  1,255,255,254,  0,  0,  0,  0,  0,255,255,255,  0,  0,  0,  0,255,255,  0,  0,192,192, 48, 48,  0,  0,240,240,  0,  0,  0,  0,  0,  0,240,240,  0,  0,240,240,192,192, 48, 48, 48, 48,192,192,  0,  0, 48, 48,243,243,  0,  0,  0,  0,  0,  0, 48, 48, 48, 48, 48, 48,192,192,  0,  0,  0,  0,  0,
-        0,  0,  0,255,255,255,  0,  0,  0,  0,  0,127,255,255,128,128,224,120, 30,135,129,193,193, 97, 97, 49, 49, 25, 25,141,237,127, 31,  7,255,255,  7, 31,127,237,141, 25, 25, 49, 49, 97, 97,193,193,129,135, 30,120,224,128,128,255,255,127,  0,  0,  0,  0,  0,255,255,255,  0,  0,  0,  0, 63, 63,  3,  3, 12, 12, 48, 48,  0,  0,  0,  0, 51, 51, 51, 51, 51, 51, 15, 15,  0,  0, 63, 63,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 48, 48, 63, 63, 48, 48,  0,  0, 12, 12, 51, 51, 51, 51, 51, 51, 63, 63,  0,  0,  0,  0,  0,
-        0,  0,  0,  0, 15, 63,255,248,224,128,  0,  0,  3, 15, 63,127,255,239,207,141, 13, 12, 12, 12, 12, 12, 12, 12, 30,127,225,128,  0,  0,255,255,  0,  0,128,225,127, 30, 12, 12, 12, 12, 12, 12, 12, 13,141,207,239,255,127, 63, 15,  3,  0,  0,128,224,248,255, 63, 15,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,  0,  0,  0,  3,  7, 15, 62,124,248,240,224,192,128,  1,  3,  7, 15, 30, 28, 60, 56,120,112,112,224,224,225,231,254,248,255,255,248,254,231,225,224,224,112,112,120, 56, 60, 28, 30, 15,  7,  3,  1,128,192,224,240,248,124, 62, 15,  7,  3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  3,  7, 15, 14, 30, 28, 60, 56,120,112,112,112,224,224,224,224,224,224,224,224,224,224,224,224,224,224,224,224,112,112,112,120, 56, 60, 28, 30, 14, 15,  7,  3,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
-    };
-    oled_write_raw_P(kyria_logo, sizeof(kyria_logo));
-}
+// static void render_kyria_logo(void) {
+//     static const char PROGMEM kyria_logo[] = {
+//         0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,128,128,192,224,240,112,120, 56, 60, 28, 30, 14, 14, 14,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7, 14, 14, 14, 30, 28, 60, 56,120,112,240,224,192,128,128,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+//         0,  0,  0,  0,  0,  0,  0,192,224,240,124, 62, 31, 15,  7,  3,  1,128,192,224,240,120, 56, 60, 28, 30, 14, 14,  7,  7,135,231,127, 31,255,255, 31,127,231,135,  7,  7, 14, 14, 30, 28, 60, 56,120,240,224,192,128,  1,  3,  7, 15, 31, 62,124,240,224,192,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+//         0,  0,  0,  0,240,252,255, 31,  7,  1,  0,  0,192,240,252,254,255,247,243,177,176, 48, 48, 48, 48, 48, 48, 48,120,254,135,  1,  0,  0,255,255,  0,  0,  1,135,254,120, 48, 48, 48, 48, 48, 48, 48,176,177,243,247,255,254,252,240,192,  0,  0,  1,  7, 31,255,252,240,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+//         0,  0,  0,255,255,255,  0,  0,  0,  0,  0,254,255,255,  1,  1,  7, 30,120,225,129,131,131,134,134,140,140,152,152,177,183,254,248,224,255,255,224,248,254,183,177,152,152,140,140,134,134,131,131,129,225,120, 30,  7,  1,  1,255,255,254,  0,  0,  0,  0,  0,255,255,255,  0,  0,  0,  0,255,255,  0,  0,192,192, 48, 48,  0,  0,240,240,  0,  0,  0,  0,  0,  0,240,240,  0,  0,240,240,192,192, 48, 48, 48, 48,192,192,  0,  0, 48, 48,243,243,  0,  0,  0,  0,  0,  0, 48, 48, 48, 48, 48, 48,192,192,  0,  0,  0,  0,  0,
+//         0,  0,  0,255,255,255,  0,  0,  0,  0,  0,127,255,255,128,128,224,120, 30,135,129,193,193, 97, 97, 49, 49, 25, 25,141,237,127, 31,  7,255,255,  7, 31,127,237,141, 25, 25, 49, 49, 97, 97,193,193,129,135, 30,120,224,128,128,255,255,127,  0,  0,  0,  0,  0,255,255,255,  0,  0,  0,  0, 63, 63,  3,  3, 12, 12, 48, 48,  0,  0,  0,  0, 51, 51, 51, 51, 51, 51, 15, 15,  0,  0, 63, 63,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 48, 48, 63, 63, 48, 48,  0,  0, 12, 12, 51, 51, 51, 51, 51, 51, 63, 63,  0,  0,  0,  0,  0,
+//         0,  0,  0,  0, 15, 63,255,248,224,128,  0,  0,  3, 15, 63,127,255,239,207,141, 13, 12, 12, 12, 12, 12, 12, 12, 30,127,225,128,  0,  0,255,255,  0,  0,128,225,127, 30, 12, 12, 12, 12, 12, 12, 12, 13,141,207,239,255,127, 63, 15,  3,  0,  0,128,224,248,255, 63, 15,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+//         0,  0,  0,  0,  0,  0,  0,  3,  7, 15, 62,124,248,240,224,192,128,  1,  3,  7, 15, 30, 28, 60, 56,120,112,112,224,224,225,231,254,248,255,255,248,254,231,225,224,224,112,112,120, 56, 60, 28, 30, 15,  7,  3,  1,128,192,224,240,248,124, 62, 15,  7,  3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+//         0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  3,  7, 15, 14, 30, 28, 60, 56,120,112,112,112,224,224,224,224,224,224,224,224,224,224,224,224,224,224,224,224,112,112,112,120, 56, 60, 28, 30, 14, 15,  7,  3,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
+//     };
+//     oled_write_raw_P(kyria_logo, sizeof(kyria_logo));
+// }
 
 static void render_qmk_logo(void) {
   static const char PROGMEM qmk_logo[] = {
@@ -181,6 +209,30 @@ static void render_status(void) {
             oled_write_P(PSTR("Undefined\n"), false);
     }
 
+    oled_write_P(PSTR("Encoders: "), false);
+    switch (enc_mode) {
+        case SCROLL:
+            oled_write_P(PSTR("Scroll\n"), false);
+            break;
+        case MOUSE:
+            oled_write_P(PSTR("Mouse\n"), false);
+            break;
+        case TEXT:
+            oled_write_P(PSTR("Text manip\n"), false);
+            break;
+        case APPSW:
+            oled_write_P(PSTR("App Switch\n"), false);
+            break;
+        case MEDIA:
+            oled_write_P(PSTR("Media\n"), false);
+            break;
+        case PONG:
+            oled_write_P(PSTR("PONG!\n"), false);
+            break;
+        default:
+            oled_write_P(PSTR("Undefined\n"), false);
+    }
+
     // Host Keyboard LED Status
     uint8_t led_usb_state = host_keyboard_leds();
     oled_write_P(IS_LED_ON(led_usb_state, USB_LED_NUM_LOCK) ? PSTR("NUMLCK ") : PSTR("       "), false);
@@ -189,32 +241,348 @@ static void render_status(void) {
 }
 
 void oled_task_user(void) {
+    if (enc_mode == PONG && is_keyboard_master()) {
+        pong_frame();
+        return;
+    }
+    // if (is_keyboard_master() && ((++render_counter & 0b10000000) == 0b10000000)) {
+    //     render_counter = 0;
+    if ((!status_changed) && (enc_mode != PONG)) {
+        return;
+    }
     if (is_keyboard_master()) {
         render_status(); // Renders the current keyboard state (layer, lock, caps, scroll, etc)
     } else {
-        render_kyria_logo();
+        //render_kyria_logo();
     }
+    status_changed = false;
 }
+
 #endif
 
 #ifdef ENCODER_ENABLE
+
+
+void left_encoder_pressed(bool pressed) {
+    if (get_highest_layer(layer_state) == _ADJUST) {
+        enc_mode = SCROLL;
+        status_changed = true;
+        return;
+    }
+
+    switch (enc_mode) {
+        case SCROLL:
+            if (pressed) {
+                register_code(KC_MS_BTN3);
+            }
+            else {
+                unregister_code(KC_MS_BTN3);
+            }
+            break;
+        case MOUSE:
+            if (pressed) {
+                register_code(KC_MS_BTN1);
+            }
+            else {
+                unregister_code(KC_MS_BTN1);
+            }
+            break;
+        case TEXT:
+            if (pressed) {
+                register_code(KC_LCTRL);
+                tap_code(KC_C);
+                unregister_code(KC_LCTRL);
+            }
+            break;
+        case APPSW:
+            if (pressed) {
+                tap_code(KC_ENTER);
+            }
+            break;
+        case MEDIA:
+            if (pressed) {
+                tap_code(KC_MUTE);
+            }
+            break;
+        case PONG:
+            if (pressed) {
+                // pong_input(player_left, pressed);
+                pong_press(player_left);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void right_encoder_pressed(bool pressed) {
+    if (get_highest_layer(layer_state) == _ADJUST) {
+        enc_mode = MOUSE;
+        status_changed = true;
+        return;
+    }
+    switch (enc_mode) {
+        case SCROLL:
+            if (pressed) {
+                register_code(KC_MS_BTN3);
+            }
+            else {
+                unregister_code(KC_MS_BTN3);
+            }
+            break;
+        case MOUSE:
+            if (pressed) {
+                register_code(KC_MS_BTN2);
+            }
+            else {
+                unregister_code(KC_MS_BTN2);
+            }
+            break;
+        case TEXT:
+            if (pressed) {
+                register_code(KC_LCTRL);
+                tap_code(KC_V);
+                unregister_code(KC_LCTRL);
+            }
+            break;
+        case APPSW:
+            if (pressed) {
+                register_code(KC_LALT);
+                tap_code(KC_ESC);
+                unregister_code(KC_LALT);
+            }
+            break;
+        case MEDIA:
+            if (pressed) {
+                tap_code(KC_MPLY);
+            }
+            break;
+        case PONG:
+            if (pressed) {
+                // pong_input(player_right, pressed);
+                pong_press(player_right);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void left_encoder_cw(void) {
+    if (get_highest_layer(layer_state) == _ADJUST) {
+        enc_mode = TEXT;
+        status_changed = true;
+        return;
+    }
+    switch (enc_mode) {
+        case SCROLL:
+            tap_code(KC_MS_WH_RIGHT);
+            break;
+        case MOUSE:
+            tap_code(KC_MS_LEFT);
+            break;
+        case TEXT:
+            register_code(KC_LCTRL);
+            register_code(KC_LSFT);
+            tap_code(KC_W);
+            unregister_code(KC_LSFT);
+            unregister_code(KC_LCTRL);
+            break;
+        case APPSW:
+            register_code(KC_LCTRL);
+            register_code(KC_LALT);
+            register_code(KC_LSFT);
+            _delay_ms(20);
+            tap_code(KC_TAB);
+            unregister_code(KC_LSFT);
+            unregister_code(KC_LALT);
+            unregister_code(KC_LCTRL);
+            break;
+        case MEDIA:
+            tap_code(KC_VOLD);
+            break;
+        case PONG:
+            pong_input(player_left, clockwise);
+            break;
+        default:
+            break;
+    }
+}
+
+void left_encoder_acw(void) {
+    if (get_highest_layer(layer_state) == _ADJUST) {
+        enc_mode = APPSW;
+        status_changed = true;
+        return;
+    }
+    switch (enc_mode) {
+        case SCROLL:
+            tap_code(KC_MS_WH_LEFT);
+            break;
+        case MOUSE:
+            tap_code(KC_MS_RIGHT);
+            break;
+        case TEXT:
+            register_code(KC_LCTRL);
+            tap_code(KC_W);
+            unregister_code(KC_LCTRL);
+            break;
+        case APPSW:
+            register_code(KC_LCTRL);
+            register_code(KC_LALT);
+            _delay_ms(20);
+            tap_code(KC_TAB);
+            unregister_code(KC_LALT);
+            unregister_code(KC_LCTRL);
+            break;
+        case MEDIA:
+            tap_code(KC_VOLU);
+            break;
+        case PONG:
+            pong_input(player_left, anticlockwise);
+            break;
+        default:
+            break;
+    }
+}
+
+void right_encoder_cw(void) {
+    if (get_highest_layer(layer_state) == _ADJUST) {
+        enc_mode = MEDIA;
+        status_changed = true;
+        return;
+    }
+    switch (enc_mode) {
+        case SCROLL:
+            tap_code(KC_MS_WH_UP);
+            break;
+        case MOUSE:
+            tap_code(KC_MS_DOWN);
+            break;
+        case TEXT:
+            register_code(KC_LCTRL);
+            tap_code(KC_LEFT);
+            unregister_code(KC_LCTRL);
+            break;
+        case APPSW:
+            register_code(KC_LCTRL);
+            register_code(KC_LSFT);
+            _delay_ms(20);
+            tap_code(KC_TAB);
+            unregister_code(KC_LSFT);
+            unregister_code(KC_LCTRL);
+            break;
+        case MEDIA:
+            tap_code(KC_MPRV);
+            break;
+        case PONG:
+            pong_input(player_right, clockwise);
+            break;
+        default:
+            break;
+    }
+}
+
+void right_encoder_acw(void) {
+    if (get_highest_layer(layer_state) == _ADJUST) {
+        enc_mode = PONG;
+        pong_init();
+        status_changed = true;
+        return;
+    }
+    switch (enc_mode) {
+        case SCROLL:
+            tap_code(KC_MS_WH_DOWN);
+            break;
+        case MOUSE:
+            tap_code(KC_MS_UP);
+            break;
+        case TEXT:
+            register_code(KC_LCTRL);
+            tap_code(KC_RIGHT);
+            unregister_code(KC_LCTRL);
+            break;
+        case APPSW:
+            register_code(KC_LCTRL);
+            _delay_ms(20);
+            tap_code(KC_TAB);
+            unregister_code(KC_LCTRL);
+            break;
+        case MEDIA:
+            tap_code(KC_MNXT);
+            break;
+        case PONG:
+            pong_input(player_right, anticlockwise);
+            break;
+        default:
+            break;
+    }
+}
+
 bool encoder_update_user(uint8_t index, bool clockwise) {
     if (index == 0) {
-        // Volume control
         if (clockwise) {
-            tap_code(KC_VOLD);
+            left_encoder_cw();
         } else {
-            tap_code(KC_VOLU);
+            left_encoder_acw();
         }
     }
     else if (index == 1) {
-        // Page up/Page down
         if (clockwise) {
-            tap_code(KC_PGDN);
+            right_encoder_cw();
         } else {
-            tap_code(KC_PGUP);
+            right_encoder_acw();
         }
     }
     return true;
 }
+
 #endif
+
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case LOWER:
+            if (record->event.pressed) {
+                layer_on(_LOWER);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
+                register_code(KC_ACL0);
+            } else {
+                layer_off(_LOWER);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
+                unregister_code(KC_ACL0);
+            }
+            return false;
+            break;
+        case RAISE:
+            if (record->event.pressed) {
+                layer_on(_RAISE);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
+                register_code(KC_ACL0);
+            } else {
+                layer_off(_RAISE);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
+                unregister_code(KC_ACL0);
+            }
+            return false;
+            break;
+        case KC_CAPS:
+        case KC_SLCK:
+        case KC_NLCK:
+            status_changed = true;
+            return true;
+        case LENC:
+#ifdef ENCODER_ENABLE
+            left_encoder_pressed(record->event.pressed);
+#endif
+            return false;
+            break;
+        case RENC:
+#ifdef ENCODER_ENABLE
+            right_encoder_pressed(record->event.pressed);
+#endif
+            return false;
+            break;
+    }
+    return true;
+}
